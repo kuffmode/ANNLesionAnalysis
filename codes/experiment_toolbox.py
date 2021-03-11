@@ -202,6 +202,3 @@ def node_to_link(links, target_node,translated_links):
             if j == target_node:
                 if i not in translated_links:
                     translated_links.append(i)
-
-
-

@@ -9,6 +9,9 @@ import copy
 import experiment_toolbox as exto
 import game_play_toolbox as gpto
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 # The files
 config_file = '/home/kayson/PycharmProjects/shapleyvalue/AEconfig-SI.txt'
 genome_file = '/home/kayson/PycharmProjects/shapleyvalue/network_3_fitness_1300_.pkl'

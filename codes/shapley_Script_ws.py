@@ -109,6 +109,6 @@ plt.yticks(range(-120, 141, 20), fontsize=12, fontweight='bold')
 plt.ylabel('Shapley Values', fontsize=14, fontweight='bold')
 plt.title(f'Estimated Shapley Value of all links (Shuffled weights), CI = %95, Number of permutations = {n_samples}',
           fontsize=16, fontweight='bold')
-plt.show()
+#plt.show()
 plt.savefig(f'SV_SW{n_samples}.pdf', bbox_inches='tight')
 

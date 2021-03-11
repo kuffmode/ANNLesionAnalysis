@@ -29,8 +29,8 @@ config = neat.Config(neat.DefaultGenome,
 scores_table_file = '/home/kayson/PycharmProjects/' \
                     'shapleyvalue/Interactions_scores_table_updated.pkl'
 
-with open(scores_table_file, 'rb') as f:
-    scores_table = pickle.load(f)
+# with open(scores_table_file, 'rb') as f:
+#     scores_table = pickle.load(f)
 # Genome is basically the NEAT-optimized network
 with open(genome_file, 'rb') as f:
     optimized_genome = pickle.load(f)
@@ -43,8 +43,8 @@ input_nodes, hidden_nodes, output_nodes, links \
 
 all_nodes = input_nodes + hidden_nodes + output_nodes
 
-for link in list(optimized_genome.connections.keys()):
-    optimized_genome.connections[link].enabled = False
+# for link in list(optimized_genome.connections.keys()):
+#     optimized_genome.connections[link].enabled = False
 
 # -----------------------------------------------------------
 # experiment itself
