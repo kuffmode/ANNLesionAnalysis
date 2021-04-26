@@ -17,6 +17,7 @@ import time
 import pandas as pd
 import tensorflow as tf
 import experiment_toolbox as exto
+import itertools
 
 # tensorflow has some weird warnings, this will hide them
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -429,3 +430,31 @@ def compute_nodal_shapley(genome, all_nodes, links, n_trials, scores_table, ae_f
             nodal_shapley_table[node][trial] = \
                 scores_table[frozenset(translated_links_seq1)] - scores_table[frozenset(translated_links_seq2)]
     return nodal_shapley_table
+
+
+def k_order_nodal_shapley(node_list,
+                          genome,
+                          links,
+                          intact_performance_score,
+                          n_trials=16,
+                          order=1,
+                          **params):
+    scores = {}
+    for combination in frozenset(itertools.combinations(node_list, r=order)):
+        if combination not in scores:
+            print(combination)
+            for node in combination:
+                translated_links = []
+                backup_genome = copy.deepcopy(genome)
+                exto.node_to_link(links, node, translated_links)
+                for link in translated_links:
+                    backup_genome.connections[link].enabled = False
+            for trial in range(n_trials):
+                performance = []
+                performance.append(play_games(play_game,
+                                              n_games=16,
+                                              genome=backup_genome,
+                                              n_jobs=-1, **params))
+                scores[combination] = int(intact_performance_score - np.mean(performance))
+    return scores
+
