@@ -68,6 +68,7 @@ for k in n_k:
             if node in combination:
                 temp.append(k_order_scores[k][combination])
         k_order_shapleys[k][node] = temp
+
 with open(f'{n_k}_order_SV{n_trials}_scores_table.pkl', 'wb') as output:
     pickle.dump(k_order_scores, output, 1)
 with open(f'{n_k}_order_SV{n_trials}_shapley_table.pkl', 'wb') as output:
@@ -77,7 +78,6 @@ with open(f'{n_k}_order_SV{n_trials}_shapley_table.pkl', 'wb') as output:
 nodal_shapley_sorted = nodal_shapley.reindex(nodal_shapley.mean().sort_values().index, axis=1)
 k_order_shapleys_sorted = {}
 for k in k_order_shapleys.keys():
-    print(k)
     k_order_shapleys_sorted[k] = k_order_shapleys[k].reindex(nodal_shapley_sorted.mean().sort_values().index, axis=1)
 
 

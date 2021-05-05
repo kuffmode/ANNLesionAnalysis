@@ -1,7 +1,13 @@
 # ANNLesionAnalysis
 Codes and datasets that used or produced during the research project: **Systematic Lesion Analysis of an Artificial Neural Network: A Step Towards Quantifying Causation in the Brain.**
 
-Firstly, I'm not a good coder yet so I appreciate any feedback that can make the codes more efficient. 
+Firstly, I'm not a good coder yet so I appreciate any feedback that can make the codes more efficient. When I started this project I wasn't aware of many Python/programming conventions and I learned a lot of them after I was almost done with this project so I already know a few things that I need to work on later:
+
+    1. Docstring
+    2. Type hints
+    3. Better dependency management
+    4. Better project structure
+    5. Small adjustments here and there to make the code easier to read and faster.
 
 I have the functions in two toolboxes ([game_play_toolbox.py](https://github.com/kuffmode/ANNLesionAnalysis/blob/main/codes/game_play_toolbox.py) and [experiment_toolbox.py](https://github.com/kuffmode/ANNLesionAnalysis/blob/main/codes/experiment_toolbox.py)) I tried to comment things as much as I could but let me know if things are not clear. Generally, game_play contains the game itself and Shapley related functions while the experiment_toolbox is more about single-site lesion analysis.
 

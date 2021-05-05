@@ -78,6 +78,7 @@ sig_intact_weight_sw = stats.mannwhitneyu(single_link_lesion['optimized_network'
 
 sig_intact_blind = stats.mannwhitneyu(single_link_lesion['optimized_network']['intact'],
                                       single_link_lesion['noisy_network']['intact'])
+# MannwhitneyuResult(statistic=50919.5, pvalue=9.848849828142587e-65)
 
 intact_performances = {
     'optimized': single_link_lesion['optimized_network']['intact'],
@@ -90,7 +91,6 @@ plt.figure(figsize=(8, 10), dpi=300)
 sns.displot(data=intact_performances, kind='kde', rug=True)
 plt.xlabel('Performance')
 plt.savefig('intact_performances.svg')
-# MannwhitneyuResult(statistic=50919.5, pvalue=9.848849828142587e-65)
 sig_intact_rand = stats.mannwhitneyu(single_link_lesion['optimized_network']['intact'],
                                      random_agent_perf)
 # MannwhitneyuResult(statistic=39542.0, pvalue=9.084810449045245e-84)
