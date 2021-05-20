@@ -458,3 +458,164 @@ def k_order_nodal_shapley(node_list,
                 scores[combination] = int(intact_performance_score - np.mean(performance))
     return scores
 
+
+def neural_recorder(environment_name: str = 'SpaceInvaders-v4',
+                    model_filename: str = "",
+                    genome: neat.genome.DefaultGenome = None,
+                    config: neat.Config = None,
+                    frames_per_state: int = 2,
+                    nfeatures: int = 6,
+                    noise_input=False,
+                    env_seed = 1):
+    # environment != observation. observation is a state from the environment
+    environment = gym.make(environment_name)
+    environment.seed(env_seed)
+    model = load_model(model_filename, 4)
+
+    # initiates a network from the trained genome and its config file
+    network = neat.nn.feed_forward.FeedForwardNetwork.create(genome, config)
+
+    stack = init_states_stack(frames_per_state, nfeatures)
+    current_fitness = 0
+    observation = environment.reset()  # the first frame is generated here
+    life_count = 3
+    neural_states = []
+    time_of_death = []
+    done = False
+    t = 0
+    while not done:
+
+        #environment.render()
+        state = frame_to_state(observation, model)
+        stack = append_states_stack(stack, state)
+
+        if noise_input is False:
+            # network assigns values to actions according to the given state
+            actions = network.activate(stack)
+        else:
+            # feeds noise to the network instead of the latent space of AE
+            actions = network.activate(np.random.random(len(stack)))
+        # picks the action with the highest value
+        max_action_idx = np.argmax(actions)
+        neural_states.append(np.fromiter(network.values.values(),dtype=float))
+        # feeds it to the environment and collects the reward if there is any
+        observation, reward, done, info = environment.step(max_action_idx)
+        current_fitness += reward
+        if info['ale.lives'] < life_count:
+            time_of_death.append(t)
+            life_count = info['ale.lives']
+        t+=1
+
+    recordings = pd.DataFrame.from_records(neural_states,columns=network.values.keys())
+    environment.close()
+    stack.clear()
+    del model, stack, state, environment
+    tf.keras.backend.clear_session()
+    # to prevent RAM build-up
+    gc.collect()
+    return current_fitness, recordings, time_of_death
+
+
+def fisher_z_transform(connectivity_matrix):
+    for r in connectivity_matrix:
+        np.log(1 + r / 1 - r) / 2
+    return connectivity_matrix
+
+
+def nodal_functional_connectivity(all_nodes,
+                                  links,
+                                  intact_genome,
+                                  n_trials,
+                                  **params):
+    fc_impact_nodes = pd.DataFrame(columns=all_nodes, index=n_trials)
+    scores_nodes = pd.DataFrame(columns=all_nodes, index=n_trials)
+
+    for node in all_nodes:
+
+        lesioned_genome = copy.deepcopy(intact_genome)
+        translated_links = []
+        exto.node_to_link(links, node, translated_links)
+
+        for link in translated_links:
+            lesioned_genome.connections[link].enabled = False
+        print(f'Node: {node} ---------------------')
+
+        for trial in n_trials:
+            print(f'trial: {trial}')
+            print(f'intact playing')
+            _, intact_neural_data, _ = neural_recorder(
+                genome=intact_genome,
+                env_seed=trial,
+                **params)
+            tf.keras.backend.clear_session()
+            print(f'lesioned playing')
+            scores_nodes[node][trial], lesioned_neural_data, _ = neural_recorder(
+                genome=lesioned_genome,
+                env_seed=trial,
+                **params)
+            intact_fc = intact_neural_data.corr(method='pearson').fillna(0)
+            lesion_fc = lesioned_neural_data.corr(method='pearson').fillna(0)
+
+            #Fisher z-transform
+            intact_fc = intact_fc.applymap(np.arctanh).fillna(0).replace(np.inf,0)
+            lesion_fc = lesion_fc.applymap(np.arctanh).fillna(0).replace(np.inf,0)
+            diff_fc = intact_fc - lesion_fc
+            fc_impact_nodes[node][trial] = np.abs(diff_fc.sum().sum())
+            tf.keras.backend.clear_session()
+        gc.collect()
+    return fc_impact_nodes, scores_nodes
+
+
+def link_functional_connectivity(links,
+                                 intact_genome,
+                                 n_trials,
+                                 **params):
+    fc_impact_connections = pd.DataFrame(columns=links, index=n_trials)
+    scores_connections = pd.DataFrame(columns=links, index=n_trials)
+
+    for link in links:
+        lesioned_genome = copy.deepcopy(intact_genome)
+        lesioned_genome.connections[link].enabled = False
+        print(f'connection: {link} ---------------------')
+
+        for trial in n_trials:
+            print(f'trial: {trial}')
+            print(f'intact playing')
+            _, intact_neural_data, _ = neural_recorder(
+                genome=intact_genome,
+                env_seed=trial,
+                **params)
+            tf.keras.backend.clear_session()
+            print(f'lesioned playing')
+            scores_connections[link][trial], lesioned_neural_data, _ = neural_recorder(
+                genome=lesioned_genome,
+                env_seed=trial,
+                **params)
+            tf.keras.backend.clear_session()
+            intact_fc = intact_neural_data.corr(method='pearson').fillna(0)
+            lesion_fc = lesioned_neural_data.corr(method='pearson').fillna(0)
+
+            intact_fc = intact_fc.applymap(np.arctanh).fillna(0).replace(np.inf,0)
+            lesion_fc = lesion_fc.applymap(np.arctanh).fillna(0).replace(np.inf,0)
+            diff_fc = intact_fc - lesion_fc
+            fc_impact_connections[link][trial] = np.abs(diff_fc.sum().sum())
+        gc.collect()
+    return fc_impact_connections, scores_connections
+
+
+
+
+
+def action_argmax_mask(neural_data, input_nodes, hidden_nodes):
+    masked_neural_data = copy.deepcopy(neural_data)
+
+    masked_neural_data[input_nodes + hidden_nodes] = 0
+    for t in masked_neural_data.index:
+        chosen = masked_neural_data.iloc[t].idxmax()
+
+        for indx, _ in enumerate(masked_neural_data.iloc[t]):
+            if indx != chosen:
+                masked_neural_data.iloc[t][indx] = 0
+            else:
+                masked_neural_data.iloc[t][indx] = 1
+    return masked_neural_data
