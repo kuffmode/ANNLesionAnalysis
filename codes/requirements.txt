@@ -1,5 +1,5 @@
 gym==0.17.1
-tensorflow_gpu==2.1.0
+tensorflow_gpu==2.4.2
 opencv_python==4.2.0.32
 joblib==0.17.0
 numpy==1.17.1
