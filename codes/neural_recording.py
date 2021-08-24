@@ -2,6 +2,7 @@
 # importing and preparing things
 # -----------------------------------------------------------
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from scipy import stats
 
@@ -11,6 +12,9 @@ from game_play_toolbox import *
 import os
 import pickle
 import tensorflow as tf
+
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = 'GothamSSm'
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -38,6 +42,10 @@ exto.pruner(optimized_genome)
 intact_genome = copy.deepcopy(optimized_genome)
 input_nodes, hidden_nodes, output_nodes, links \
     , _, _, _, _, _ = exto.network_structure(config, optimized_genome)
+
+edges = []
+for edge in optimized_genome.connections:
+    edges.append((edge[0], edge[1], optimized_genome.connections[edge].weight))
 
 params = dict(environment_name='SpaceInvaders-v4',
               model_filename=ae_file,
@@ -98,7 +106,7 @@ with open(f'link_FC.pkl', 'wb') as f:
 # -----------------------------------------------------------
 # Plotting the relationships.
 # -----------------------------------------------------------
-fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(8, 8), constrained_layout=True,dpi=300)
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(8, 8), constrained_layout=True, dpi=300)
 sns.regplot(x=link_wise['fc_impact'].mean(),
             y=link_wise['scores'].mean(),
             n_boot=10_000,
@@ -153,13 +161,13 @@ another_lesioned_genome.connections[(-1, 4)].enabled = False
 # -----------------------------------------------------------
 # Intact network
 # -----------------------------------------------------------
-intact_score, intact_neural_data, intact_time_of_deaths = neural_recorder(genome=optimized_genome,env_seed=1, **params)
+intact_score, intact_neural_data, intact_time_of_deaths = neural_recorder(genome=optimized_genome, env_seed=1, **params)
 
 # -----------------------------------------------------------
 # Lesioning (0, 0)
 # -----------------------------------------------------------
 lesioned_score, lesioned_neural_data, lesioned_time_of_deaths = neural_recorder(
-    genome=lesioned_genome,env_seed=1, **params)
+    genome=lesioned_genome, env_seed=1, **params)
 
 # -----------------------------------------------------------
 # Lesioning (-1, 4)
@@ -174,14 +182,13 @@ intact_action_mask = action_argmax_mask(intact_neural_data, input_nodes, hidden_
 lesioned_action_mask = action_argmax_mask(lesioned_neural_data, input_nodes, hidden_nodes)
 another_lesioned_action_mask = action_argmax_mask(another_lesioned_neural_data, input_nodes, hidden_nodes)
 
-
 # -----------------------------------------------------------
 # Plotting a trial
 # -----------------------------------------------------------
 _, axs = plt.subplots(3, 1, figsize=(16, 14))
-sns.heatmap(ax=axs[0], data=intact_neural_data.T, cmap='RdBu_r',linewidths=0, center=0)
-sns.heatmap(ax=axs[1], data=lesioned_neural_data.T, cmap='RdBu_r',linewidths=0, center=0)
-sns.heatmap(ax=axs[2], data=another_lesioned_neural_data.T, cmap='RdBu_r',linewidths=0, center=0)
+sns.heatmap(ax=axs[0], data=intact_neural_data.T, cmap='RdBu_r', linewidths=0, center=0)
+sns.heatmap(ax=axs[1], data=lesioned_neural_data.T, cmap='RdBu_r', linewidths=0, center=0)
+sns.heatmap(ax=axs[2], data=another_lesioned_neural_data.T, cmap='RdBu_r', linewidths=0, center=0)
 
 for death in intact_time_of_deaths:
     axs[0].axvline(death, color='r')
@@ -220,7 +227,6 @@ axs[1].tick_params('y', labelrotation=0)
 axs[2].tick_params('y', labelrotation=0)
 
 plt.tight_layout()
-plt.show()
 plt.savefig('neural recording of intact vs lesioned.pdf')
 
 # -----------------------------------------------------------
@@ -252,6 +258,8 @@ plt.savefig('FC intact vs 0_0 lesioned.pdf')
 # -----------------------------------------------------------
 # Some exploratory Graph analyses
 # -----------------------------------------------------------
+structural_graph = nx.DiGraph()
+structural_graph.add_weighted_edges_from(edges)
 intact_graph = nx.from_pandas_adjacency(intact_fc)
 lesioned_graph = nx.from_pandas_adjacency(lesion_fc)
 nx.global_efficiency(intact_graph)  # 0.70
@@ -263,5 +271,94 @@ nx.local_efficiency(lesioned_graph)  # 0.89
 nx.average_clustering(intact_graph)  # 0.84
 nx.average_clustering(lesioned_graph)  # 0.89
 
-intact_neural_data.to_csv('intact_data',index = False)
-lesioned_neural_data.to_csv('lesioned_data',index = False)
+intact_neural_data.to_csv('intact_data', index=False)
+lesioned_neural_data.to_csv('lesioned_data', index=False)
+nx.write_graphml(structural_graph, 'structural_network.graphml')
+nx.write_graphml(intact_graph, 'intact_func_network.graphml')
+nx.write_graphml(lesioned_graph, 'lesioned_func_network.graphml')
+
+# -----------------------------------------------------------
+# Focusing on unit 0, -4, -1, and 4
+# -----------------------------------------------------------
+fig, ax1 = plt.subplots(figsize=(9, 3), dpi=150)
+ax1.set_xlabel('Time (frames)', fontweight='bold')
+ax1.set_ylabel("Output unit's activity", fontweight='bold')
+ax1.plot(lesioned_neural_data[4][80:240], color='#591154', linewidth=4, alpha=0.6, label='Neuron 4')
+
+ax1.axvspan(80, 150, color='#00B1DB', alpha=0.15)
+ax1.axvspan(150, 240, color='#F0864C', alpha=0.15)
+
+ax2 = ax1.twinx()
+ax2.set_ylabel("Input units' activity", fontweight='bold')
+ax2.plot(lesioned_neural_data[-1][80:240], color='#0729F5', linewidth=2, label='Neuron -1')
+ax2.plot(lesioned_neural_data[-4][80:240], color='#F53A61', linewidth=2, label='Neuron -4')
+ax1.grid(False)
+ax2.grid(False)
+
+fig.tight_layout()
+fig.legend()
+plt.savefig('zoomed_timecourse.pdf')
+
+stats.pearsonr(lesioned_neural_data[-1], lesioned_neural_data[-4])  # (-0.4886663963475001, 6.595763780729417e-78)
+fig, ax1 = plt.subplots(figsize=(9, 3), dpi=150)
+ax1.axvspan(80, 150, color='#00B1DB', alpha=0.15)
+ax1.axvspan(150, 240, color='#F0864C', alpha=0.15)
+ax1.plot(lesioned_neural_data[-1], color='#0729F5', linewidth=2, label='Neuron -1')
+ax1.plot(lesioned_neural_data[-4], color='#F53A61', linewidth=2, label='Neuron -4')
+ax1.set_xlabel('time (frames)', fontweight='bold')
+ax1.set_ylabel("Units' activity", fontweight='bold')
+ax1.grid(False)
+ax1.annotate('r = -0.48, p < 0.0001', xy=(870, 2))
+fig.tight_layout()
+fig.legend()
+plt.savefig('inputs_whole_timecourse.pdf')
+
+# -----------------------------------------------------------
+# Quickly targeting (0, 0) and (-4, 0) to show the Sprague effect
+# -----------------------------------------------------------
+n_trials = range(64)
+
+zeze_lesioned_genome = copy.deepcopy(optimized_genome)
+mifoze_lesioned_genome = copy.deepcopy(optimized_genome)
+
+zeze_lesioned_genome.connections[(0, 0)].enabled = False
+mifoze_lesioned_genome.connections[(-4, 0)].enabled = False
+
+both_lesioned_genome = copy.deepcopy(zeze_lesioned_genome)
+both_lesioned_genome.connections[(-4, 0)].enabled = False
+
+intact_params = dict(model_filename=ae_file,
+                     genome=intact_genome,
+                     config=config)
+zeze_params = dict(model_filename=ae_file,
+                     genome=zeze_lesioned_genome,
+                     config=config)
+mifoze_params = dict(model_filename=ae_file,
+                     genome=mifoze_lesioned_genome,
+                     config=config)
+both_params = dict(model_filename=ae_file,
+                     genome=both_lesioned_genome,
+                     config=config)
+
+targets = ['(0, 0)', '(-4, 0)', 'intact', 'both']
+target_dataset = pd.DataFrame(columns=targets, index=n_trials)
+for trial in n_trials:
+    target_dataset['intact'][trial] = np.mean(play_games(play_game, n_games=16, n_jobs=-1, **intact_params))
+    target_dataset['both'][trial] = np.mean(play_games(play_game, n_games=16, n_jobs=-1, **both_params))
+    target_dataset['(-4, 0)'][trial] = np.mean(play_games(play_game, n_games=16, n_jobs=-1, **mifoze_params))
+    target_dataset['(0, 0)'][trial] = np.mean(play_games(play_game, n_games=16, n_jobs=-1, **zeze_params))
+with open(f'targeted_lesion.pkl', 'wb') as f:
+    pickle.dump(target_dataset, f, 1)
+
+plt.figure(figsize=(4, 5), dpi=300)
+plt.xlabel('Lesioning condition', fontweight='bold')
+plt.ylabel('Performance', fontweight='bold')
+
+sns.stripplot(data=target_dataset,alpha=.1, zorder=1,color = 'k')
+
+sns.pointplot(data=target_dataset, ci=95, join=False, capsize=.2,
+              n_boot=10_000, color='k', markers='_', errwidth=2)
+plt.tight_layout()
+plt.grid(color='k', linewidth=1, alpha = 0.15, axis= 'both')
+
+plt.savefig('targeted lesion.pdf')

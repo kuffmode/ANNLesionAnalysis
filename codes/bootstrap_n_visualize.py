@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 # And the toolbox
 import experiment_toolbox as exto
 import game_play_toolbox as gpto
-
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = 'GothamSSm'
 # -----------------------------------------------------------
 # preparing to plot everything (shapley values vs single lesions)
 # -----------------------------------------------------------
@@ -127,13 +128,13 @@ fig, axes = plt.subplots(nrows=2, ncols=2,
                          constrained_layout=True)
 # -----------------------------------------------------------
 sns.pointplot(data=single_node_lesion, ci=95, join=False, capsize=.4,
-              n_boot=10000, color='k', markers='_', errwidth=2, ax=axes[0][0])
+              n_boot=10_000, color='k', markers='_', errwidth=2, ax=axes[0][0])
 sns.pointplot(data=single_link_lesion['optimized_network'], ci=95, join=False, capsize=.4,
-              n_boot=10000, color='k', markers='_', errwidth=2, ax=axes[0][1])
+              n_boot=10_000, color='k', markers='_', errwidth=2, ax=axes[0][1])
 sns.pointplot(data=node_shapley, ci=95, join=False, capsize=.4,
-              n_boot=10000, color='k', markers='_', errwidth=2, ax=axes[1][0])
+              n_boot=10_000, color='k', markers='_', errwidth=2, ax=axes[1][0])
 sns.pointplot(data=link_shapley, ci=95, join=False, capsize=.4,
-              n_boot=10000, color='k', markers='_', errwidth=2, ax=axes[1][1])
+              n_boot=10_000, color='k', markers='_', errwidth=2, ax=axes[1][1])
 # -----------------------------------------------------------
 axes[0][0].set_xticklabels(labels=x_nodes, rotation=90, fontsize=10, fontweight='bold')
 # axes[0][0].set_yticklabels(labels = range(150,451,50) , fontsize=10, fontweight='bold')

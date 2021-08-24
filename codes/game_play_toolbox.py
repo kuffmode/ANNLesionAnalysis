@@ -603,9 +603,6 @@ def link_functional_connectivity(links,
     return fc_impact_connections, scores_connections
 
 
-
-
-
 def action_argmax_mask(neural_data, input_nodes, hidden_nodes):
     masked_neural_data = copy.deepcopy(neural_data)
 

@@ -10,6 +10,8 @@ import experiment_toolbox as exto
 import game_play_toolbox as gpto
 
 import os
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = 'GothamSSm'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # The files
