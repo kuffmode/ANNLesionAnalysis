@@ -8,4 +8,4 @@ Keras==2.3.1
 neat_python==0.92
 neat==0.4.1
 scikit_learn==0.24.2
-tensorflow==2.4.1
+tensorflow==2.4.2
