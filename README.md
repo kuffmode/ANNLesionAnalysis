@@ -1,4 +1,8 @@
 # ANNLesionAnalysis
+
+If you are here to use MSA, please visit our Python library instead of this repository:
+https://github.com/kuffmode/msa
+-
 Codes and datasets that used or produced during the research project: **Systematic Lesion Analysis of an Artificial Neural Network: A Step Towards Quantifying Causation in the Brain.**
 
 Firstly, I'm not a good coder yet so I appreciate any feedback that can make the codes more efficient. When I started this project I wasn't aware of many Python/programming conventions and I learned a lot of them after I was almost done with this project so I already know a few things that I need to work on later:
